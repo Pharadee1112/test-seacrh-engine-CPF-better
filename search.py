@@ -14,12 +14,19 @@ model = SentenceTransformer(MODEL_NAME)
 with open("catalog.json", encoding="utf-8") as f:
     products = json.load(f)
 
+def to_text(value):
+    """รองรับทั้ง string เดี่ยว และ list ของ string"""
+    if isinstance(value, list):
+        return " ".join(value)
+    return value or ""
+
 # รวมชื่อ + คำอธิบาย + หมวดหมู่ + diet tags เป็นข้อความเดียวต่อสินค้า แล้วแปลงเป็นเวกเตอร์ล่วงหน้า
-# ใช้ .get(...) พร้อมค่า default เผื่อสินค้าบางรายการยังไม่มี field พวกนี้
 texts = [
-    f"{p['name']} {p['description']} {p.get('category', '')} {' '.join(p.get('diet_tags', []))}"
+    f"{p['name']} {p['description']} {to_text(p.get('brand', ''))} "
+    f"{to_text(p.get('category', ''))} {to_text(p.get('diet_tags', []))}"
     for p in products
 ]
+
 product_vecs = model.encode(texts, normalize_embeddings=True)
 
 
@@ -36,8 +43,14 @@ if __name__ == "__main__":
         "เนื้อจากพืชไม่มีคอเลสเตอรอล",
         "อาหารมังสวิรัติกรุบกรอบ",
         "อาหารแช่แข็ง",
+        "วีแกน",
+        "อาหารเจ",
+        "มีทซีโร่",
+        "ไก่ทอดจากพืช",
+        "เนื้อเทียม"
     ]
     for q in test_queries:
         print(f"\nQuery: {q}")
         for name, score in search(q, top_k=2):
             print(f"  {score:.3f}  {name}")
+
